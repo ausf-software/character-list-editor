@@ -64,7 +64,7 @@ public class TagPanel extends JPanel {
 
     public void setBackgroundColor(Color backgroundColor) {
         this.backgroundColor = backgroundColor;
-        this.darkerColor = backgroundColor.darker();
+        this.darkerColor = backgroundColor.darker().darker();
         repaint();
     }
 }
