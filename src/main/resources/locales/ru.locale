@@ -1,0 +1,33 @@
+# NewСharacterDialog
+newcharacter.title=Создать новый лист персонажа
+
+# Common
+cancel=Отмена
+create=Создать
+browse=Обзор...
+import=Импорт
+settings=Настройки
+error=Ошибка
+ok=ОК
+
+# StartupDialog
+startup.title=Добро пожаловать
+startup.version=Версия:
+startup.search=Поиск:
+
+# Settings
+settings.theme=Тема:
+settings.language=Язык:
+settings.restart.title=Перезапуск
+settings.restart.message=Для применения изменений требуется перезапуск приложения
+settings.character_name=Стандартное имя персонажа:
+settings.directory=Путь хранения по умолчанию:
+
+character.import.error="Ошибка импорта проекта"
+
+# Диалог загрузки проекта
+loading.character.title=Загрузка листа персонажа
+
+# Диалог ошибки открытия листа персонажа
+open.character.error.title=Ошибка загрузки листа персонажа
+open.character.error.message=В результате загрузки листа персонажа произошла ошибка. Возможно поврежден файл.
