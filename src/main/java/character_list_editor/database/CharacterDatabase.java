@@ -1,5 +1,7 @@
 package character_list_editor.database;
 
+import character_list_editor.utils.PathUtil;
+
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -13,12 +15,13 @@ public class CharacterDatabase {
     private final String dbUrl;
     private Connection connection;
 
+    private final static String FILE_NAME = "character_data.db";
+
     /**
      * Конструктор. Соединение не устанавливается до вызова connect().
-     * @param dbFilePath путь к файлу БД (например, "characters.db")
      */
-    public CharacterDatabase(String dbFilePath) {
-        this.dbUrl = "jdbc:sqlite:" + dbFilePath;
+    public CharacterDatabase() {
+        this.dbUrl = "jdbc:sqlite:" + PathUtil.APP_DIR + FILE_NAME;
     }
 
     /**
@@ -29,7 +32,6 @@ public class CharacterDatabase {
         if (connection == null || connection.isClosed()) {
             connection = DriverManager.getConnection(dbUrl);
             try (Statement stmt = connection.createStatement()) {
-                // Включаем поддержку внешних ключей для каждого соединения
                 stmt.execute("PRAGMA foreign_keys = ON");
             }
         }
