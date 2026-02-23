@@ -2,12 +2,14 @@ package character_list_editor.database;
 
 import character_list_editor.utils.PathUtil;
 
+import java.awt.*;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 public class CharacterDatabase {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -68,7 +70,8 @@ public class CharacterDatabase {
 
                         "CREATE TABLE IF NOT EXISTS tags (" +
                         "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                        "    name TEXT NOT NULL UNIQUE" +
+                        "    name TEXT NOT NULL UNIQUE," +
+                        "    color INTEGER" +
                         ");" +
 
                         "CREATE TABLE IF NOT EXISTS character_tags (" +
@@ -307,24 +310,23 @@ public class CharacterDatabase {
 
     // ==================== Методы для работы с тегами ====================
 
-    /**
-     * Возвращает ID существующего тега или создаёт новый и возвращает его ID.
-     */
-    private int getOrCreateTagId(String tagName) throws SQLException {
-        // Пытаемся найти существующий тег
-        String selectSql = "SELECT id FROM tags WHERE name = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(selectSql)) {
+    private OptionalInt getTagIdByName(String tagName) throws SQLException {
+        String sql = "SELECT id FROM tags WHERE name = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, tagName);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rs.getInt("id");
+                return OptionalInt.of(rs.getInt("id"));
             }
         }
+        return OptionalInt.empty();
+    }
 
-        // Если не найден, вставляем
-        String insertSql = "INSERT INTO tags (name) VALUES (?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
-            pstmt.setString(1, tagName);
+    public int createTag(Tag tag) throws SQLException {
+        String sql = "INSERT INTO tags (name, color) VALUES (?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setString(1, tag.getName());
+            pstmt.setInt(2, tag.getColorRGB());
             pstmt.executeUpdate();
             ResultSet rs = pstmt.getGeneratedKeys();
             if (rs.next()) {
@@ -338,8 +340,19 @@ public class CharacterDatabase {
     /**
      * Добавляет тег к персонажу. Если тег с таким именем не существует, он создаётся.
      */
-    public void addTagToCharacter(int characterId, String tagName) throws SQLException {
-        int tagId = getOrCreateTagId(tagName);
+    public void addTagToCharacter(int characterId, String tagName, Color backgroundColor) throws SQLException {
+        // Пытаемся получить ID существующего тега
+        OptionalInt optId = getTagIdByName(tagName);
+        int tagId;
+        if (optId.isPresent()) {
+            tagId = optId.getAsInt();
+        } else {
+            Tag newTag = new Tag();
+            newTag.setName(tagName);
+            newTag.setColor(backgroundColor);
+            tagId = createTag(newTag);
+        }
+        // Добавляем связь
         String sql = "INSERT OR IGNORE INTO character_tags (character_id, tag_id) VALUES (?, ?)";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, characterId);
@@ -393,7 +406,7 @@ public class CharacterDatabase {
      */
     public List<Tag> getTagObjectsForCharacter(int characterId) throws SQLException {
         List<Tag> tags = new ArrayList<>();
-        String sql = "SELECT t.id, t.name " +
+        String sql = "SELECT t.id, t.name, t.color " +
                 "FROM tags t " +
                 "JOIN character_tags ct ON t.id = ct.tag_id " +
                 "WHERE ct.character_id = ?";
@@ -401,7 +414,10 @@ public class CharacterDatabase {
             pstmt.setInt(1, characterId);
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                Tag tag = new Tag(rs.getInt("id"), rs.getString("name"));
+                Tag tag = new Tag();
+                tag.setId(rs.getInt("id"));
+                tag.setName(rs.getString("name"));
+                tag.setColorRGB(rs.getInt("color"));
                 tags.add(tag);
             }
         }
@@ -413,11 +429,15 @@ public class CharacterDatabase {
      */
     public List<Tag> getAllTags() throws SQLException {
         List<Tag> tags = new ArrayList<>();
-        String sql = "SELECT id, name FROM tags ORDER BY name";
+        String sql = "SELECT id, name, color FROM tags ORDER BY name";
         try (Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                tags.add(new Tag(rs.getInt("id"), rs.getString("name")));
+                Tag tag = new Tag();
+                tag.setId(rs.getInt("id"));
+                tag.setName(rs.getString("name"));
+                tag.setColorRGB(rs.getInt("color"));
+                tags.add(tag);
             }
         }
         return tags;
@@ -427,7 +447,13 @@ public class CharacterDatabase {
      * Добавляет новый тег в таблицу tags. Если тег с таким именем уже существует, возвращает его ID.
      */
     public int addTag(Tag tag) throws SQLException {
-        return getOrCreateTagId(tag.getName());
+        // Проверяем, существует ли уже тег с таким именем
+        OptionalInt optId = getTagIdByName(tag.getName());
+        if (optId.isPresent()) {
+            return optId.getAsInt();
+        } else {
+            return createTag(tag);
+        }
     }
 
     /**

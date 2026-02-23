@@ -114,7 +114,7 @@ public class CharacterRepository {
         // Добавляем теги и пакеты
         if (character.getTags() != null) {
             for (Tag tag : character.getTags()) {
-                db.addTagToCharacter(id, tag.getName());
+                db.addTagToCharacter(id, tag.getName(), tag.getColor());
             }
         }
         if (character.getPackages() != null) {
@@ -244,21 +244,19 @@ public class CharacterRepository {
      */
     private void synchronizeTags(Character character) throws SQLException {
         int charId = character.getId();
-        List<String> currentTagNames = db.getTagsForCharacter(charId);
-        List<String> newTagNames = character.getTags() == null ?
-                new ArrayList<>() :
-                character.getTags().stream().map(Tag::getName).collect(Collectors.toList());
+        List<Tag> currentTagNames = db.getTagObjectsForCharacter(charId);
+        List<Tag> newTagNames = character.getTags();
 
         // Удаляем лишние
-        for (String name : currentTagNames) {
-            if (!newTagNames.contains(name)) {
-                db.removeTagFromCharacter(charId, name);
+        for (Tag tag : currentTagNames) {
+            if (!newTagNames.contains(tag)) {
+                db.removeTagFromCharacter(charId, tag.getName());
             }
         }
         // Добавляем новые
-        for (String name : newTagNames) {
-            if (!currentTagNames.contains(name)) {
-                db.addTagToCharacter(charId, name);
+        for (Tag tag : newTagNames) {
+            if (!currentTagNames.contains(tag)) {
+                db.addTagToCharacter(charId, tag.getName(), tag.getColor());
             }
         }
     }
