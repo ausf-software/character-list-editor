@@ -1,6 +1,6 @@
 package character_list_editor.database;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.Objects;
 
 public class Tag {
