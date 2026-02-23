@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS character_package (
 -- Таблица тегов (уникальные названия)
 CREATE TABLE IF NOT EXISTS tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE,
+    color INTEGER
 );
 
 -- Связь многие-ко-многим: персонажи и теги
