@@ -17,17 +17,10 @@ public class CharacterDatabase {
 
     private final static String FILE_NAME = "character_data.db";
 
-    /**
-     * Конструктор. Соединение не устанавливается до вызова connect().
-     */
     public CharacterDatabase() {
         this.dbUrl = "jdbc:sqlite:" + PathUtil.APP_DIR + FILE_NAME;
     }
 
-    /**
-     * Устанавливает соединение с базой данных.
-     * @throws SQLException если соединение не удалось
-     */
     public void connect() throws SQLException {
         if (connection == null || connection.isClosed()) {
             connection = DriverManager.getConnection(dbUrl);
@@ -37,9 +30,6 @@ public class CharacterDatabase {
         }
     }
 
-    /**
-     * Закрывает соединение с базой данных.
-     */
     public void disconnect() {
         if (connection != null) {
             try {
@@ -50,10 +40,6 @@ public class CharacterDatabase {
         }
     }
 
-    /**
-     * Создаёт таблицы, если они ещё не существуют.
-     * @throws SQLException
-     */
     public void createTables() throws SQLException {
         String sql =
                 "CREATE TABLE IF NOT EXISTS characters (" +
@@ -80,11 +66,17 @@ public class CharacterDatabase {
                         "    FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE" +
                         ");" +
 
+                        "CREATE TABLE IF NOT EXISTS tags (" +
+                        "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "    name TEXT NOT NULL UNIQUE" +
+                        ");" +
+
                         "CREATE TABLE IF NOT EXISTS character_tags (" +
                         "    character_id INTEGER NOT NULL," +
-                        "    tag TEXT NOT NULL," +
-                        "    PRIMARY KEY (character_id, tag)," +
-                        "    FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE" +
+                        "    tag_id INTEGER NOT NULL," +
+                        "    PRIMARY KEY (character_id, tag_id)," +
+                        "    FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE," +
+                        "    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE" +
                         ");" +
 
                         "CREATE TABLE IF NOT EXISTS character_backups (" +
@@ -102,11 +94,6 @@ public class CharacterDatabase {
 
     // ==================== Методы для работы с персонажами ====================
 
-    /**
-     * Добавляет нового персонажа в БД.
-     * @param character объект персонажа (id игнорируется)
-     * @return сгенерированный id
-     */
     public int addCharacter(Character character) throws SQLException {
         String sql = "INSERT INTO characters (name, campaign, last_opened, sheet_path) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -125,9 +112,6 @@ public class CharacterDatabase {
         }
     }
 
-    /**
-     * Получает персонажа по его ID.
-     */
     public Optional<Character> getCharacter(int id) throws SQLException {
         String sql = "SELECT id, name, campaign, last_opened, sheet_path FROM characters WHERE id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -146,9 +130,6 @@ public class CharacterDatabase {
         return Optional.empty();
     }
 
-    /**
-     * Обновляет данные существующего персонажа.
-     */
     public void updateCharacter(Character character) throws SQLException {
         String sql = "UPDATE characters SET name = ?, campaign = ?, last_opened = ?, sheet_path = ? WHERE id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -161,9 +142,6 @@ public class CharacterDatabase {
         }
     }
 
-    /**
-     * Удаляет персонажа и все связанные данные (бэкапы, теги, связи с пакетами) благодаря CASCADE.
-     */
     public void deleteCharacter(int id) throws SQLException {
         String sql = "DELETE FROM characters WHERE id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -172,7 +150,43 @@ public class CharacterDatabase {
         }
     }
 
+    public List<Character> getAllCharacters() throws SQLException {
+        List<Character> list = new ArrayList<>();
+        String sql = "SELECT id, name, campaign, last_opened, sheet_path FROM characters ORDER BY last_opened DESC";
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                Character c = new Character();
+                c.setId(rs.getInt("id"));
+                c.setName(rs.getString("name"));
+                c.setCampaign(rs.getString("campaign"));
+                c.setLastOpened(LocalDateTime.parse(rs.getString("last_opened"), DATE_FORMAT));
+                c.setSheetPath(rs.getString("sheet_path"));
+                list.add(c);
+            }
+        }
+        return list;
+    }
+
     // ==================== Методы для работы с пакетами ====================
+
+    public List<Package> getAllPackages() throws SQLException {
+        List<Package> packages = new ArrayList<>();
+        String sql = "SELECT id, name, description, file_path, version FROM packages ORDER BY name";
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                Package p = new Package();
+                p.setId(rs.getInt("id"));
+                p.setName(rs.getString("name"));
+                p.setDescription(rs.getString("description"));
+                p.setFilePath(rs.getString("file_path"));
+                p.setVersion(rs.getString("version"));
+                packages.add(p);
+            }
+        }
+        return packages;
+    }
 
     public int addPackage(Package pkg) throws SQLException {
         String sql = "INSERT INTO packages (name, description, file_path, version) VALUES (?, ?, ?, ?)";
@@ -249,11 +263,10 @@ public class CharacterDatabase {
 
     public List<Package> getPackagesForCharacter(int characterId) throws SQLException {
         List<Package> packages = new ArrayList<>();
-        String sql =
-                "SELECT p.id, p.name, p.description, p.file_path, p.version " +
-                        "FROM packages p " +
-                        "JOIN character_package cp ON p.id = cp.package_id " +
-                        "WHERE cp.character_id = ?";
+        String sql = "SELECT p.id, p.name, p.description, p.file_path, p.version " +
+                "FROM packages p " +
+                "JOIN character_package cp ON p.id = cp.package_id " +
+                "WHERE cp.character_id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, characterId);
             ResultSet rs = pstmt.executeQuery();
@@ -272,11 +285,10 @@ public class CharacterDatabase {
 
     public List<Character> getCharactersForPackage(int packageId) throws SQLException {
         List<Character> characters = new ArrayList<>();
-        String sql =
-                "SELECT c.id, c.name, c.campaign, c.last_opened, c.sheet_path " +
-                        "FROM characters c " +
-                        "JOIN character_package cp ON c.id = cp.character_id " +
-                        "WHERE cp.package_id = ?";
+        String sql = "SELECT c.id, c.name, c.campaign, c.last_opened, c.sheet_path " +
+                "FROM characters c " +
+                "JOIN character_package cp ON c.id = cp.character_id " +
+                "WHERE cp.package_id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, packageId);
             ResultSet rs = pstmt.executeQuery();
@@ -293,37 +305,140 @@ public class CharacterDatabase {
         return characters;
     }
 
-    // ==================== Методы для тегов персонажей ====================
+    // ==================== Методы для работы с тегами ====================
 
-    public void addTagToCharacter(int characterId, String tag) throws SQLException {
-        String sql = "INSERT OR IGNORE INTO character_tags (character_id, tag) VALUES (?, ?)";
+    /**
+     * Возвращает ID существующего тега или создаёт новый и возвращает его ID.
+     */
+    private int getOrCreateTagId(String tagName) throws SQLException {
+        // Пытаемся найти существующий тег
+        String selectSql = "SELECT id FROM tags WHERE name = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(selectSql)) {
+            pstmt.setString(1, tagName);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+        }
+
+        // Если не найден, вставляем
+        String insertSql = "INSERT INTO tags (name) VALUES (?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setString(1, tagName);
+            pstmt.executeUpdate();
+            ResultSet rs = pstmt.getGeneratedKeys();
+            if (rs.next()) {
+                return rs.getInt(1);
+            } else {
+                throw new SQLException("Не удалось создать тег");
+            }
+        }
+    }
+
+    /**
+     * Добавляет тег к персонажу. Если тег с таким именем не существует, он создаётся.
+     */
+    public void addTagToCharacter(int characterId, String tagName) throws SQLException {
+        int tagId = getOrCreateTagId(tagName);
+        String sql = "INSERT OR IGNORE INTO character_tags (character_id, tag_id) VALUES (?, ?)";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, characterId);
-            pstmt.setString(2, tag);
+            pstmt.setInt(2, tagId);
             pstmt.executeUpdate();
         }
     }
 
-    public void removeTagFromCharacter(int characterId, String tag) throws SQLException {
-        String sql = "DELETE FROM character_tags WHERE character_id = ? AND tag = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setInt(1, characterId);
-            pstmt.setString(2, tag);
-            pstmt.executeUpdate();
+    /**
+     * Удаляет тег у персонажа.
+     */
+    public void removeTagFromCharacter(int characterId, String tagName) throws SQLException {
+        // Сначала получаем ID тега (если его нет, то и удалять нечего)
+        String selectSql = "SELECT id FROM tags WHERE name = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(selectSql)) {
+            pstmt.setString(1, tagName);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                int tagId = rs.getInt("id");
+                String deleteSql = "DELETE FROM character_tags WHERE character_id = ? AND tag_id = ?";
+                try (PreparedStatement dpstmt = connection.prepareStatement(deleteSql)) {
+                    dpstmt.setInt(1, characterId);
+                    dpstmt.setInt(2, tagId);
+                    dpstmt.executeUpdate();
+                }
+            }
         }
     }
 
+    /**
+     * Возвращает список имён тегов для персонажа.
+     */
     public List<String> getTagsForCharacter(int characterId) throws SQLException {
         List<String> tags = new ArrayList<>();
-        String sql = "SELECT tag FROM character_tags WHERE character_id = ?";
+        String sql = "SELECT t.name " +
+                "FROM tags t " +
+                "JOIN character_tags ct ON t.id = ct.tag_id " +
+                "WHERE ct.character_id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, characterId);
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                tags.add(rs.getString("tag"));
+                tags.add(rs.getString("name"));
             }
         }
         return tags;
+    }
+
+    /**
+     * Возвращает список объектов Tag для персонажа.
+     */
+    public List<Tag> getTagObjectsForCharacter(int characterId) throws SQLException {
+        List<Tag> tags = new ArrayList<>();
+        String sql = "SELECT t.id, t.name " +
+                "FROM tags t " +
+                "JOIN character_tags ct ON t.id = ct.tag_id " +
+                "WHERE ct.character_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, characterId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Tag tag = new Tag(rs.getInt("id"), rs.getString("name"));
+                tags.add(tag);
+            }
+        }
+        return tags;
+    }
+
+    /**
+     * Возвращает все теги из таблицы tags.
+     */
+    public List<Tag> getAllTags() throws SQLException {
+        List<Tag> tags = new ArrayList<>();
+        String sql = "SELECT id, name FROM tags ORDER BY name";
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                tags.add(new Tag(rs.getInt("id"), rs.getString("name")));
+            }
+        }
+        return tags;
+    }
+
+    /**
+     * Добавляет новый тег в таблицу tags. Если тег с таким именем уже существует, возвращает его ID.
+     */
+    public int addTag(Tag tag) throws SQLException {
+        return getOrCreateTagId(tag.getName());
+    }
+
+    /**
+     * Удаляет тег из таблицы tags. При наличии связей с персонажами они будут удалены благодаря ON DELETE CASCADE.
+     */
+    public void deleteTag(int tagId) throws SQLException {
+        String sql = "DELETE FROM tags WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, tagId);
+            pstmt.executeUpdate();
+        }
     }
 
     // ==================== Методы для бэкапов персонажей ====================
@@ -358,6 +473,16 @@ public class CharacterDatabase {
             }
         }
         return backups;
+    }
+
+    public void updateBackup(Backup backup) throws SQLException {
+        String sql = "UPDATE character_backups SET backup_path = ?, backup_date = ? WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, backup.getBackupPath());
+            pstmt.setString(2, backup.getBackupDate().format(DATE_FORMAT));
+            pstmt.setInt(3, backup.getId());
+            pstmt.executeUpdate();
+        }
     }
 
     public void deleteBackup(int backupId) throws SQLException {

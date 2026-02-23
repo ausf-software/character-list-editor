@@ -9,8 +9,9 @@ public class Character {
     private String campaign;
     private LocalDateTime lastOpened;
     private String sheetPath;
-    private List<String> tags;
+    private List<Tag> tags;
     private List<Backup> backups;
+    private List<Package> packages;
 
     public Character() {}
 
@@ -61,11 +62,11 @@ public class Character {
         this.sheetPath = sheetPath;
     }
 
-    public List<String> getTags() {
+    public List<Tag> getTags() {
         return tags;
     }
 
-    public void setTags(List<String> tags) {
+    public void setTags(List<Tag> tags) {
         this.tags = tags;
     }
 
@@ -75,5 +76,13 @@ public class Character {
 
     public void setBackups(List<Backup> backups) {
         this.backups = backups;
+    }
+
+    public List<Package> getPackages() {
+        return packages;
+    }
+
+    public void setPackages(List<Package> packages) {
+        this.packages = packages;
     }
 }

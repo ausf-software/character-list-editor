@@ -28,12 +28,19 @@ CREATE TABLE IF NOT EXISTS character_package (
     FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE
 );
 
--- Теги персонажей (один персонаж может иметь несколько тегов)
+-- Таблица тегов (уникальные названия)
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+-- Связь многие-ко-многим: персонажи и теги
 CREATE TABLE IF NOT EXISTS character_tags (
     character_id INTEGER NOT NULL,
-    tag TEXT NOT NULL,
-    PRIMARY KEY (character_id, tag),
-    FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+    tag_id INTEGER NOT NULL,
+    PRIMARY KEY (character_id, tag_id),
+    FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
 
 -- Бэкапы персонажей
