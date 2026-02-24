@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
+import java.io.File;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,7 +23,7 @@ public class CharacterDatabase {
     private Connection connection;
 
     public CharacterDatabase() {
-        this.dbUrl = "jdbc:sqlite:" + PathUtil.APP_DIR + FILE_NAME;
+        this.dbUrl = "jdbc:sqlite:" + new File(PathUtil.APP_DIR, FILE_NAME).toPath();
         logger.debug("Database URL: {}", dbUrl);
     }
 

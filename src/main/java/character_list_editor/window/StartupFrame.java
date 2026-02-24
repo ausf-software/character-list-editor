@@ -77,7 +77,7 @@ public class StartupFrame extends JFrame {
 
         // Список персонажей
         characterList = new CharacterSheetList();
-        rightPanel.add(new JScrollPane(characterList), BorderLayout.CENTER);
+        rightPanel.add(characterList, BorderLayout.CENTER);
 
         splitPane.setLeftComponent(leftPanel);
         splitPane.setRightComponent(rightPanel);
