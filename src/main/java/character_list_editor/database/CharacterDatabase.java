@@ -132,27 +132,30 @@ public class CharacterDatabase {
                 character.getName(), character.getCampaign(), character.getSheetPath());
 
         String sql = "INSERT INTO characters (name, campaign, last_opened, sheet_path) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, character.getName());
             pstmt.setString(2, character.getCampaign());
             pstmt.setString(3, character.getLastOpened().format(DATE_FORMAT));
             pstmt.setString(4, character.getSheetPath());
             pstmt.executeUpdate();
 
-            ResultSet rs = pstmt.getGeneratedKeys();
-            if (rs.next()) {
-                int id = rs.getInt(1);
-                logger.debug("Character added with ID: {}", id);
-                return id;
-            } else {
-                logger.error("No generated key returned for new character");
-                throw new SQLException("Не удалось получить сгенерированный ID");
+            try (Statement stmt = connection.createStatement();
+                 ResultSet rs = stmt.executeQuery("SELECT last_insert_rowid()")) {
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    logger.debug("Character added with ID: {}", id);
+                    return id;
+                } else {
+                    logger.error("No last_insert_rowid returned");
+                    throw new SQLException("Не удалось получить сгенерированный ID");
+                }
             }
         } catch (SQLException e) {
             logger.error("Error adding character", e);
             throw e;
         }
     }
+
 
     public Optional<Character> getCharacter(int id) throws SQLException {
         ensureConnection();
@@ -272,21 +275,23 @@ public class CharacterDatabase {
         logger.debug("Adding package: name={}, filePath={}", pkg.getName(), pkg.getFilePath());
 
         String sql = "INSERT INTO packages (name, description, file_path, version) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, pkg.getName());
             pstmt.setString(2, pkg.getDescription());
             pstmt.setString(3, pkg.getFilePath());
             pstmt.setString(4, pkg.getVersion());
             pstmt.executeUpdate();
 
-            ResultSet rs = pstmt.getGeneratedKeys();
-            if (rs.next()) {
-                int id = rs.getInt(1);
-                logger.debug("Package added with ID: {}", id);
-                return id;
-            } else {
-                logger.error("No generated key returned for new package");
-                throw new SQLException("Не удалось получить ID пакета");
+            try (Statement stmt = connection.createStatement();
+                 ResultSet rs = stmt.executeQuery("SELECT last_insert_rowid()")) {
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    logger.debug("Package added with ID: {}", id);
+                    return id;
+                } else {
+                    logger.error("No last_insert_rowid returned");
+                    throw new SQLException("Не удалось получить ID пакета");
+                }
             }
         } catch (SQLException e) {
             logger.error("Error adding package", e);
@@ -475,18 +480,21 @@ public class CharacterDatabase {
         logger.debug("Creating new tag: name={}, color={}", tag.getName(), tag.getColorRGB());
 
         String sql = "INSERT INTO tags (name, color) VALUES (?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, tag.getName());
             pstmt.setInt(2, tag.getColorRGB());
             pstmt.executeUpdate();
-            ResultSet rs = pstmt.getGeneratedKeys();
-            if (rs.next()) {
-                int id = rs.getInt(1);
-                logger.debug("Tag created with ID: {}", id);
-                return id;
-            } else {
-                logger.error("No generated key returned for new tag");
-                throw new SQLException("Не удалось создать тег");
+
+            try (Statement stmt = connection.createStatement();
+                 ResultSet rs = stmt.executeQuery("SELECT last_insert_rowid()")) {
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    logger.debug("Tag created with ID: {}", id);
+                    return id;
+                } else {
+                    logger.error("No last_insert_rowid returned");
+                    throw new SQLException("Не удалось создать тег");
+                }
             }
         } catch (SQLException e) {
             logger.error("Error creating tag", e);
@@ -679,20 +687,22 @@ public class CharacterDatabase {
         logger.debug("Adding backup for character ID: {}, path: {}", backup.getCharacterId(), backup.getBackupPath());
 
         String sql = "INSERT INTO character_backups (character_id, backup_path, backup_date) VALUES (?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, backup.getCharacterId());
             pstmt.setString(2, backup.getBackupPath());
             pstmt.setString(3, backup.getBackupDate().format(DATE_FORMAT));
             pstmt.executeUpdate();
 
-            ResultSet rs = pstmt.getGeneratedKeys();
-            if (rs.next()) {
-                int id = rs.getInt(1);
-                logger.debug("Backup added with ID: {}", id);
-                return id;
-            } else {
-                logger.error("No generated key returned for new backup");
-                throw new SQLException("Не удалось получить ID бэкапа");
+            try (Statement stmt = connection.createStatement();
+                 ResultSet rs = stmt.executeQuery("SELECT last_insert_rowid()")) {
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    logger.debug("Backup added with ID: {}", id);
+                    return id;
+                } else {
+                    logger.error("No last_insert_rowid returned");
+                    throw new SQLException("Не удалось получить ID бэкапа");
+                }
             }
         } catch (SQLException e) {
             logger.error("Error adding backup", e);

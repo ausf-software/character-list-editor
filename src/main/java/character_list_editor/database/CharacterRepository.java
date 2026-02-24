@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -305,6 +306,9 @@ public class CharacterRepository {
         int charId = character.getId();
         List<Tag> currentTagNames = db.getTagObjectsForCharacter(charId);
         List<Tag> newTagNames = character.getTags();
+        if (newTagNames == null) {
+            newTagNames = Collections.emptyList();
+        }
 
         logger.debug("Synchronizing tags for character id={}: current {} tags, new {} tags",
                 charId, currentTagNames.size(), newTagNames.size());

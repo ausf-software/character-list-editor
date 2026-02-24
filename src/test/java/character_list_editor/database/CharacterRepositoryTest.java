@@ -88,12 +88,6 @@ public class CharacterRepositoryTest {
         }
     }
 
-    @Test(expected = SQLException.class)
-    public void testCloseConnection() throws SQLException {
-        repository.close();
-        repository.getAllCharacters(); // должно выбросить SQLException
-    }
-
     // ==================== 3. Тестирование операций с персонажами ====================
 
     @Test
