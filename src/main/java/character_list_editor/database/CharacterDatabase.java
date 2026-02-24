@@ -43,55 +43,59 @@ public class CharacterDatabase {
     }
 
     public void createTables() throws SQLException {
-        String sql =
+        // Разделяем создание таблиц на отдельные операторы для надёжности
+        String[] createStatements = {
                 "CREATE TABLE IF NOT EXISTS characters (" +
-                        "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                        "    name TEXT NOT NULL," +
-                        "    campaign TEXT NOT NULL," +
-                        "    last_opened TEXT NOT NULL," +
-                        "    sheet_path TEXT NOT NULL" +
-                        ");" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "name TEXT NOT NULL," +
+                        "campaign TEXT NOT NULL," +
+                        "last_opened TEXT NOT NULL," +
+                        "sheet_path TEXT NOT NULL" +
+                        ");",
 
-                        "CREATE TABLE IF NOT EXISTS packages (" +
-                        "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                        "    name TEXT NOT NULL UNIQUE," +
-                        "    description TEXT," +
-                        "    file_path TEXT NOT NULL," +
-                        "    version TEXT" +
-                        ");" +
+                "CREATE TABLE IF NOT EXISTS packages (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "name TEXT NOT NULL UNIQUE," +
+                        "description TEXT," +
+                        "file_path TEXT NOT NULL," +
+                        "version TEXT" +
+                        ");",
 
-                        "CREATE TABLE IF NOT EXISTS character_package (" +
-                        "    character_id INTEGER NOT NULL," +
-                        "    package_id INTEGER NOT NULL," +
-                        "    PRIMARY KEY (character_id, package_id)," +
-                        "    FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE," +
-                        "    FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE" +
-                        ");" +
+                "CREATE TABLE IF NOT EXISTS character_package (" +
+                        "character_id INTEGER NOT NULL," +
+                        "package_id INTEGER NOT NULL," +
+                        "PRIMARY KEY (character_id, package_id)," +
+                        "FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE," +
+                        "FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE" +
+                        ");",
 
-                        "CREATE TABLE IF NOT EXISTS tags (" +
-                        "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                        "    name TEXT NOT NULL UNIQUE," +
-                        "    color INTEGER" +
-                        ");" +
+                "CREATE TABLE IF NOT EXISTS tags (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "name TEXT NOT NULL UNIQUE," +
+                        "color INTEGER" +
+                        ");",
 
-                        "CREATE TABLE IF NOT EXISTS character_tags (" +
-                        "    character_id INTEGER NOT NULL," +
-                        "    tag_id INTEGER NOT NULL," +
-                        "    PRIMARY KEY (character_id, tag_id)," +
-                        "    FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE," +
-                        "    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE" +
-                        ");" +
+                "CREATE TABLE IF NOT EXISTS character_tags (" +
+                        "character_id INTEGER NOT NULL," +
+                        "tag_id INTEGER NOT NULL," +
+                        "PRIMARY KEY (character_id, tag_id)," +
+                        "FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE," +
+                        "FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE" +
+                        ");",
 
-                        "CREATE TABLE IF NOT EXISTS character_backups (" +
-                        "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                        "    character_id INTEGER NOT NULL," +
-                        "    backup_path TEXT NOT NULL," +
-                        "    backup_date TEXT NOT NULL," +
-                        "    FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE" +
-                        ");";
+                "CREATE TABLE IF NOT EXISTS character_backups (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "character_id INTEGER NOT NULL," +
+                        "backup_path TEXT NOT NULL," +
+                        "backup_date TEXT NOT NULL," +
+                        "FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE" +
+                        ");"
+        };
 
         try (Statement stmt = connection.createStatement()) {
-            stmt.executeUpdate(sql);
+            for (String sql : createStatements) {
+                stmt.executeUpdate(sql);
+            }
         }
     }
 
@@ -99,18 +103,21 @@ public class CharacterDatabase {
 
     public int addCharacter(Character character) throws SQLException {
         String sql = "INSERT INTO characters (name, campaign, last_opened, sheet_path) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, character.getName());
             pstmt.setString(2, character.getCampaign());
             pstmt.setString(3, character.getLastOpened().format(DATE_FORMAT));
             pstmt.setString(4, character.getSheetPath());
             pstmt.executeUpdate();
 
-            ResultSet rs = pstmt.getGeneratedKeys();
-            if (rs.next()) {
-                return rs.getInt(1);
-            } else {
-                throw new SQLException("Не удалось получить сгенерированный ID");
+            // Получаем ID последней вставленной записи
+            try (Statement stmt = connection.createStatement()) {
+                ResultSet rs = stmt.executeQuery("SELECT last_insert_rowid()");
+                if (rs.next()) {
+                    return rs.getInt(1);
+                } else {
+                    throw new SQLException("Не удалось получить сгенерированный ID");
+                }
             }
         }
     }
@@ -193,16 +200,18 @@ public class CharacterDatabase {
 
     public int addPackage(Package pkg) throws SQLException {
         String sql = "INSERT INTO packages (name, description, file_path, version) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, pkg.getName());
             pstmt.setString(2, pkg.getDescription());
             pstmt.setString(3, pkg.getFilePath());
             pstmt.setString(4, pkg.getVersion());
             pstmt.executeUpdate();
 
-            ResultSet rs = pstmt.getGeneratedKeys();
-            if (rs.next()) return rs.getInt(1);
-            else throw new SQLException("Не удалось получить ID пакета");
+            try (Statement stmt = connection.createStatement()) {
+                ResultSet rs = stmt.executeQuery("SELECT last_insert_rowid()");
+                if (rs.next()) return rs.getInt(1);
+                else throw new SQLException("Не удалось получить ID пакета");
+            }
         }
     }
 
@@ -322,17 +331,20 @@ public class CharacterDatabase {
         return OptionalInt.empty();
     }
 
-    public int createTag(Tag tag) throws SQLException {
+    private int createTag(Tag tag) throws SQLException {
         String sql = "INSERT INTO tags (name, color) VALUES (?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, tag.getName());
             pstmt.setInt(2, tag.getColorRGB());
             pstmt.executeUpdate();
-            ResultSet rs = pstmt.getGeneratedKeys();
-            if (rs.next()) {
-                return rs.getInt(1);
-            } else {
-                throw new SQLException("Не удалось создать тег");
+
+            try (Statement stmt = connection.createStatement()) {
+                ResultSet rs = stmt.executeQuery("SELECT last_insert_rowid()");
+                if (rs.next()) {
+                    return rs.getInt(1);
+                } else {
+                    throw new SQLException("Не удалось создать тег");
+                }
             }
         }
     }
@@ -341,7 +353,6 @@ public class CharacterDatabase {
      * Добавляет тег к персонажу. Если тег с таким именем не существует, он создаётся.
      */
     public void addTagToCharacter(int characterId, String tagName, Color backgroundColor) throws SQLException {
-        // Пытаемся получить ID существующего тега
         OptionalInt optId = getTagIdByName(tagName);
         int tagId;
         if (optId.isPresent()) {
@@ -352,7 +363,6 @@ public class CharacterDatabase {
             newTag.setColor(backgroundColor);
             tagId = createTag(newTag);
         }
-        // Добавляем связь
         String sql = "INSERT OR IGNORE INTO character_tags (character_id, tag_id) VALUES (?, ?)";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, characterId);
@@ -365,7 +375,6 @@ public class CharacterDatabase {
      * Удаляет тег у персонажа.
      */
     public void removeTagFromCharacter(int characterId, String tagName) throws SQLException {
-        // Сначала получаем ID тега (если его нет, то и удалять нечего)
         String selectSql = "SELECT id FROM tags WHERE name = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(selectSql)) {
             pstmt.setString(1, tagName);
@@ -447,7 +456,6 @@ public class CharacterDatabase {
      * Добавляет новый тег в таблицу tags. Если тег с таким именем уже существует, возвращает его ID.
      */
     public int addTag(Tag tag) throws SQLException {
-        // Проверяем, существует ли уже тег с таким именем
         OptionalInt optId = getTagIdByName(tag.getName());
         if (optId.isPresent()) {
             return optId.getAsInt();
@@ -471,15 +479,17 @@ public class CharacterDatabase {
 
     public int addBackup(Backup backup) throws SQLException {
         String sql = "INSERT INTO character_backups (character_id, backup_path, backup_date) VALUES (?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, backup.getCharacterId());
             pstmt.setString(2, backup.getBackupPath());
             pstmt.setString(3, backup.getBackupDate().format(DATE_FORMAT));
             pstmt.executeUpdate();
 
-            ResultSet rs = pstmt.getGeneratedKeys();
-            if (rs.next()) return rs.getInt(1);
-            else throw new SQLException("Не удалось получить ID бэкапа");
+            try (Statement stmt = connection.createStatement()) {
+                ResultSet rs = stmt.executeQuery("SELECT last_insert_rowid()");
+                if (rs.next()) return rs.getInt(1);
+                else throw new SQLException("Не удалось получить ID бэкапа");
+            }
         }
     }
 
