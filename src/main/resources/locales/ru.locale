@@ -31,3 +31,13 @@ loading.character.title=Загрузка листа персонажа
 # Диалог ошибки открытия листа персонажа
 open.character.error.title=Ошибка загрузки листа персонажа
 open.character.error.message=В результате загрузки листа персонажа произошла ошибка. Возможно поврежден файл.
+
+dialog.addtag.title=Добавить тег
+dialog.addtag.label.name=Название тега:
+dialog.addtag.label.color=Цвет тега:
+dialog.addtag.button.choose=Выбрать
+dialog.addtag.button.add=Добавить
+dialog.addtag.button.cancel=Отмена
+dialog.addtag.colorchooser.title=Выберите цвет тега
+dialog.addtag.error.database=Ошибка базы данных при сохранении тега
+dialog.addtag.error.title=Ошибка сохранения
