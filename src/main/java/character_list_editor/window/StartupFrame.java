@@ -12,15 +12,22 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
 
 public class StartupFrame extends JFrame {
     private CharacterSheetList characterList;
     private Character selectedCharacter;
+    private JTextField searchField;
+    private Timer searchTimer;
 
     public StartupFrame() {
         setTitle(LocaleManager.inst().getString("startup.title"));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initializeUI();
+        // После инициализации загружаем список персонажей
+        characterList.refresh();
     }
 
     private void initializeUI() {
@@ -56,19 +63,19 @@ public class StartupFrame extends JFrame {
 
         // Панель поиска
         JPanel searchPanel = new JPanel(new BorderLayout(5, 5));
-        JTextField searchField = new JTextField();
+        searchField = new JTextField();
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                filterCharacters(searchField.getText());
+                scheduleFilter();
             }
             @Override
             public void removeUpdate(DocumentEvent e) {
-                filterCharacters(searchField.getText());
+                scheduleFilter();
             }
             @Override
             public void changedUpdate(DocumentEvent e) {
-                filterCharacters(searchField.getText());
+                scheduleFilter();
             }
         });
         searchPanel.add(new JLabel(LocaleManager.inst().getString("startup.search")), BorderLayout.NORTH);
@@ -105,21 +112,151 @@ public class StartupFrame extends JFrame {
                 }
             }
         });
+
+        // Таймер для debounce поиска
+        searchTimer = new Timer(300, e -> {
+            // Выполняем фильтрацию с текущим текстом
+            performFilter(searchField.getText());
+        });
+        searchTimer.setRepeats(false); // однократное срабатывание
+    }
+
+    /**
+     * Запланировать фильтрацию через 300 мс после последнего ввода.
+     */
+    private void scheduleFilter() {
+        if (searchTimer.isRunning()) {
+            searchTimer.restart();
+        } else {
+            searchTimer.start();
+        }
     }
 
     /**
      * Фильтрует список персонажей по введённому тексту.
      */
-    private void filterCharacters(String searchText) {
-        if (searchText == null || searchText.trim().isEmpty()) {
-            // Пустая строка – сбрасываем фильтр
-            characterList.setFilter(null);
-        } else {
-
+    private void performFilter(String searchText) {
+        try {
+            if (searchText == null || searchText.trim().isEmpty()) {
+                // Пустая строка – сбрасываем фильтр
+                characterList.setFilter(null);
+            } else {
+                Predicate<Character> predicate = createPredicate(searchText);
+                characterList.setFilter(predicate);
+            }
+        } catch (Exception ex) {
+            // Логируем и показываем сообщение
+            ex.printStackTrace();
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(this,
+                        LocaleManager.inst().getString("search.error") + "\n" + ex.getMessage(),
+                        LocaleManager.inst().getString("error"),
+                        JOptionPane.ERROR_MESSAGE);
+            });
         }
     }
 
+    /**
+     * Создаёт предикат для фильтрации на основе строки запроса.
+     * Поддерживает кавычки для фраз, регистронезависимость, поиск по подстроке.
+     */
+    private Predicate<Character> createPredicate(String query) {
+        // Токенизация с учётом кавычек
+        List<String> tokens = parseQuery(query.trim());
+        if (tokens.isEmpty()) {
+            return ch -> true; // все подходят, но в performFilter мы уже обработали пустой случай
+        }
 
+        return character -> {
+            // Получаем поля персонажа в нижнем регистре для сравнения
+            String name = character.getName() != null ? character.getName().toLowerCase() : "";
+            String campaign = character.getCampaign() != null ? character.getCampaign().toLowerCase() : "";
+            // Имена тегов
+            List<String> tagNames = new ArrayList<>();
+            if (character.getTags() != null) {
+                for (var tag : character.getTags()) {
+                    if (tag.getName() != null) {
+                        tagNames.add(tag.getName().toLowerCase());
+                    }
+                }
+            }
+
+            // Для каждого токена проверяем вхождение хотя бы в одно поле
+            for (String token : tokens) {
+                boolean found = false;
+                // Проверяем имя
+                if (name.contains(token)) {
+                    found = true;
+                }
+                // Проверяем кампанию
+                if (!found && campaign.contains(token)) {
+                    found = true;
+                }
+                // Проверяем теги
+                if (!found) {
+                    for (String tagName : tagNames) {
+                        if (tagName.contains(token)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    return false; // токен не найден
+                }
+            }
+            return true;
+        };
+    }
+
+    /**
+     * Разбирает строку запроса на токены, учитывая кавычки.
+     * Пример: "John Doe" campaign -> ["john doe", "campaign"]
+     */
+    private List<String> parseQuery(String query) {
+        List<String> tokens = new ArrayList<>();
+        int i = 0;
+        int len = query.length();
+        while (i < len) {
+            // Пропускаем пробелы
+            if (java.lang.Character.isWhitespace(query.charAt(i))) {
+                i++;
+                continue;
+            }
+
+            if (query.charAt(i) == '"') {
+                // Начало кавычки
+                i++; // пропускаем открывающую кавычку
+                int start = i;
+                // Ищем закрывающую кавычку
+                while (i < len && query.charAt(i) != '"') {
+                    i++;
+                }
+                if (i < len && query.charAt(i) == '"') {
+                    // Нашли закрывающую
+                    String token = query.substring(start, i).toLowerCase();
+                    tokens.add(token);
+                    i++; // пропускаем закрывающую
+                } else {
+                    // Кавычка не закрыта, берем от start до конца
+                    String token = query.substring(start).toLowerCase();
+                    tokens.add(token);
+                    break; // конец строки
+                }
+            } else {
+                // Обычный токен до пробела
+                int start = i;
+                while (i < len && !java.lang.Character.isWhitespace(query.charAt(i))) {
+                    i++;
+                }
+                String token = query.substring(start, i).toLowerCase();
+                tokens.add(token);
+            }
+        }
+        return tokens;
+    }
+
+    // Остальные методы без изменений...
     private void createNewCharacterList(ActionEvent e) {
         // TODO: создание нового персонажа
     }
