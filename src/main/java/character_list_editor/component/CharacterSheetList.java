@@ -1,3 +1,4 @@
+
 package character_list_editor.component;
 
 import character_list_editor.database.Character;
