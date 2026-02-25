@@ -13,8 +13,10 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -121,6 +123,16 @@ public class CharacterSheetList extends JPanel {
                 }
             }
         });
+    }
+
+    @Override
+    public synchronized void addMouseListener(MouseListener l) {
+        characterList.addMouseListener(l);
+    }
+
+    @Override
+    public synchronized void addKeyListener(KeyListener l) {
+        characterList.addKeyListener(l);
     }
 
     private void handleAddTag(Character character) {
