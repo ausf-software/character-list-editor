@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 public class CharacterSheetList extends JPanel {
     private static final Logger logger = LoggerFactory.getLogger(CharacterSheetList.class);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+    private static final int BUTTON_WIDTH = 70;  // фиксированная ширина кнопки
+    private static final int BUTTON_HEIGHT = 25; // фиксированная высота кнопки
 
     private final LocaleManager localeManager;
     private final CharacterRepository repository;
@@ -59,10 +61,10 @@ public class CharacterSheetList extends JPanel {
         characterList.setName("characterList");
         characterList.setCellRenderer(new CharacterCardRenderer());
         characterList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        Character prototype = new Character();
-        prototype.setName("Прототип для определения размера ячейки");
-        prototype.setCampaign("Кампания");
-        characterList.setPrototypeCellValue(prototype);
+        // Убираем прототип, чтобы ячейки занимали всю доступную ширину
+        characterList.setPrototypeCellValue(null);
+        // Включаем перенос строк в ячейках (не влияет, но оставим)
+        characterList.setFixedCellHeight(-1);
 
         scrollPane = new JScrollPane(characterList);
         scrollPane.setName("scrollPane");
@@ -72,9 +74,7 @@ public class CharacterSheetList extends JPanel {
     }
 
     /**
-     * Обрабатывает клики мыши на списке, эмулируя нажатие кнопок в карточке.
-     * Так как JList не передаёт события на дочерние компоненты рендерера,
-     * мы определяем область кнопок по координатам и вызываем соответствующее действие.
+     * Обрабатывает клики мыши для эмуляции нажатия кнопок в карточке.
      */
     private void setupMouseListener() {
         characterList.addMouseListener(new MouseAdapter() {
@@ -88,41 +88,39 @@ public class CharacterSheetList extends JPanel {
                 Rectangle cellBounds = characterList.getCellBounds(index, index);
                 if (cellBounds == null || !cellBounds.contains(e.getPoint())) return;
 
-                // Предполагаемая область кнопок — нижняя часть ячейки высотой ~30 пикселей
+                // Определяем область кнопок (нижняя часть ячейки)
                 int yInCell = e.getPoint().y - cellBounds.y;
                 int cellHeight = cellBounds.height;
-                int buttonAreaHeight = 30; // примерная высота панели кнопок
-                if (yInCell <= cellHeight - buttonAreaHeight) return; // клик не в зоне кнопок
+                // Высота панели кнопок примерно равна BUTTON_HEIGHT + отступы (5+5)
+                int buttonPanelHeight = BUTTON_HEIGHT + 10;
+                if (yInCell <= cellHeight - buttonPanelHeight) return; // клик выше кнопок
 
-                // Определяем, какая кнопка нажата, по горизонтальной координате
+                // Определяем горизонтальную область кнопок
                 int xInCell = e.getPoint().x - cellBounds.x;
-                // Примерные координаты начала блока кнопок (справа, с отступом)
-                int buttonStartX = cellBounds.width - 280; // 4 кнопки * 70px
-                if (xInCell < buttonStartX) return;
+                // Кнопки выровнены вправо, их общая ширина: 4 * (BUTTON_WIDTH + промежуток 5) - промежуток после последней?
+                // В FlowLayout.RIGHT они располагаются справа с промежутками.
+                // Упростим: кнопки занимают область справа шириной 4 * BUTTON_WIDTH + 3 * 5 (промежутки между) + отступ слева 5?
+                // Но для клика нам нужно знать границы каждой кнопки.
+                // Будем считать, что кнопки начинаются с координаты buttonStartX и каждая имеет ширину BUTTON_WIDTH.
+                // Отступ справа и слева от панели кнопок — по 5 пикселей.
+                int totalButtonsWidth = 4 * BUTTON_WIDTH + 3 * 5; // 4 кнопки и 3 промежутка
+                int buttonStartX = cellBounds.width - totalButtonsWidth - 5; // отступ справа 5
 
-                int buttonIndex = (xInCell - buttonStartX) / 70; // ширина кнопки 70px
+                if (xInCell < buttonStartX) return; // левее кнопок
+
+                int buttonIndex = (xInCell - buttonStartX) / (BUTTON_WIDTH + 5); // ширина + промежуток
                 if (buttonIndex < 0 || buttonIndex >= 4) return;
 
                 Character character = listModel.getElementAt(index);
                 switch (buttonIndex) {
-                    case 0:
-                        handleAddTag(character);
-                        break;
-                    case 1:
-                        handleViewPackages(character);
-                        break;
-                    case 2:
-                        handleExport(character);
-                        break;
-                    case 3:
-                        handleDelete(character);
-                        break;
+                    case 0: handleAddTag(character); break;
+                    case 1: handleViewPackages(character); break;
+                    case 2: handleExport(character); break;
+                    case 3: handleDelete(character); break;
                 }
             }
         });
     }
-
-    // Обработчики действий (вызываются из mouseClicked)
 
     private void handleAddTag(Character character) {
         Window window = SwingUtilities.getWindowAncestor(this);
@@ -132,6 +130,7 @@ public class CharacterSheetList extends JPanel {
     }
 
     private void handleViewPackages(Character character) {
+        // TODO: использовать RulesPackageList
         JOptionPane.showMessageDialog(this,
                 "Функция просмотра пакетов будет доступна в следующей версии.",
                 "Информация",
@@ -193,8 +192,6 @@ public class CharacterSheetList extends JPanel {
         }
     }
 
-    // Обновление данных
-
     public void refresh() {
         try {
             fullList = repository.getAllCharacters();
@@ -232,13 +229,10 @@ public class CharacterSheetList extends JPanel {
         return characterList.getSelectedValue();
     }
 
-    // Поддержка смены Look and Feel
-
     @Override
     public void updateUI() {
         super.updateUI();
         if (characterList != null) {
-            // Пересоздаём рендерер, чтобы все компоненты обновились в соответствии с новой темой
             characterList.setCellRenderer(new CharacterCardRenderer());
         }
     }
@@ -269,11 +263,23 @@ public class CharacterSheetList extends JPanel {
             exportButton.setName("exportButton");
             deleteButton.setName("deleteButton");
 
-            // Отключаем фокус на кнопках, чтобы они не перехватывали события списка
+            // Отключаем фокус на кнопках
             addTagButton.setFocusable(false);
             viewPackagesButton.setFocusable(false);
             exportButton.setFocusable(false);
             deleteButton.setFocusable(false);
+
+            // Устанавливаем фиксированный размер кнопок для единообразия и точного определения кликов
+            Dimension buttonSize = new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT);
+            addTagButton.setPreferredSize(buttonSize);
+            viewPackagesButton.setPreferredSize(buttonSize);
+            exportButton.setPreferredSize(buttonSize);
+            deleteButton.setPreferredSize(buttonSize);
+            // Минимальный размер тоже фиксируем, чтобы избежать сжатия
+            addTagButton.setMinimumSize(buttonSize);
+            viewPackagesButton.setMinimumSize(buttonSize);
+            exportButton.setMinimumSize(buttonSize);
+            deleteButton.setMinimumSize(buttonSize);
 
             panel.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY),
@@ -281,11 +287,24 @@ public class CharacterSheetList extends JPanel {
             ));
             panel.setOpaque(true);
 
-            JPanel topPanel = new JPanel(new BorderLayout());
-            topPanel.add(characterNameLabel, BorderLayout.WEST);
-            topPanel.add(campaignLabel, BorderLayout.EAST);
-            topPanel.setOpaque(false);
+            // Верхняя панель с именем и кампанией
+            JPanel topPanel = new JPanel(new GridBagLayout());
+            GridBagConstraints topGbc = new GridBagConstraints();
+            topGbc.insets = new Insets(0, 0, 0, 5);
+            topGbc.gridx = 0;
+            topGbc.gridy = 0;
+            topGbc.anchor = GridBagConstraints.WEST;
+            topGbc.fill = GridBagConstraints.HORIZONTAL;
+            topGbc.weightx = 1.0;
+            topPanel.add(characterNameLabel, topGbc);
 
+            topGbc.gridx = 1;
+            topGbc.weightx = 0.0;
+            topGbc.fill = GridBagConstraints.NONE;
+            topGbc.anchor = GridBagConstraints.EAST;
+            topPanel.add(campaignLabel, topGbc);
+
+            // Размещение в contentPanel
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.gridx = 0;
             gbc.gridy = 0;
@@ -301,6 +320,7 @@ public class CharacterSheetList extends JPanel {
             gbc.weightx = 1.0;
             contentPanel.add(tagsPanel, gbc);
 
+            // Кнопки
             buttonPanel.add(addTagButton);
             buttonPanel.add(viewPackagesButton);
             buttonPanel.add(exportButton);
@@ -328,23 +348,29 @@ public class CharacterSheetList extends JPanel {
             if (character == null) return panel;
 
             characterNameLabel.setText(character.getName());
+            characterNameLabel.setToolTipText(character.getName());
+
             campaignLabel.setText(character.getCampaign());
+            campaignLabel.setToolTipText(character.getCampaign());
+
             lastOpenedLabel.setText(character.getLastOpened() != null
                     ? character.getLastOpened().format(DATE_FORMATTER)
                     : "");
 
+            // Очистка и добавление тегов
             tagsPanel.removeAll();
             if (character.getTags() != null) {
                 for (Tag tag : character.getTags()) {
                     TagPanel tagPanel = new TagPanel(tag.getColor(), tag.getName());
                     tagPanel.setName("tag_" + tag.getId());
+                    tagPanel.setToolTipText(tag.getName());
                     tagsPanel.add(tagPanel);
                 }
             }
             tagsPanel.revalidate();
             tagsPanel.repaint();
 
-            // Устанавливаем цвета выделения
+            // Цвета выделения
             if (isSelected) {
                 panel.setBackground(list.getSelectionBackground());
                 contentPanel.setBackground(list.getSelectionBackground());
