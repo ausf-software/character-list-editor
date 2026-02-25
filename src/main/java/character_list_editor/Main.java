@@ -1,5 +1,6 @@
 package character_list_editor;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -18,7 +19,15 @@ public class Main {
     public static final String VERSION = "1.0";
 
     public static void main(String[] args) {
-        configureLogPath(PathUtil.APP_DIR);
+        boolean debugEnabled = false;
+        for (String arg : args) {
+            if ("--debug".equals(arg)) {
+                debugEnabled = true;
+                break;
+            }
+        }
+
+        configureLogPath(PathUtil.APP_DIR, debugEnabled);
         ConfigManager config = ConfigManager.getInstance();
         LocaleManager localeManager = LocaleManager.inst();
         ThemeUtil.updateTheme();
@@ -30,10 +39,13 @@ public class Main {
         });
     }
 
-    public static void configureLogPath(String logPath) {
+    public static void configureLogPath(String logPath, boolean debugEnabled) {
         logPath = logPath + "/logs/";
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         ch.qos.logback.classic.Logger rootLogger = context.getLogger("ROOT");
+
+        // Устанавливаем уровень логирования в зависимости от флага
+        rootLogger.setLevel(debugEnabled ? Level.DEBUG : Level.INFO);
 
         RollingFileAppender<ILoggingEvent> fileAppender = new RollingFileAppender<>();
         fileAppender.setContext(context);
