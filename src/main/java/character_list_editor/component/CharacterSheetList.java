@@ -12,7 +12,8 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -49,6 +50,7 @@ public class CharacterSheetList extends JPanel {
 
         initComponents();
         refresh();
+        setupMouseListener();
     }
 
     private void initComponents() {
@@ -57,9 +59,8 @@ public class CharacterSheetList extends JPanel {
         characterList.setName("characterList");
         characterList.setCellRenderer(new CharacterCardRenderer());
         characterList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        // Прототип для определения размера ячейки
         Character prototype = new Character();
-        prototype.setName("Прототип с длинным именем для определения размера");
+        prototype.setName("Прототип для определения размера ячейки");
         prototype.setCampaign("Кампания");
         characterList.setPrototypeCellValue(prototype);
 
@@ -70,12 +71,135 @@ public class CharacterSheetList extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    /**
+     * Обрабатывает клики мыши на списке, эмулируя нажатие кнопок в карточке.
+     * Так как JList не передаёт события на дочерние компоненты рендерера,
+     * мы определяем область кнопок по координатам и вызываем соответствующее действие.
+     */
+    private void setupMouseListener() {
+        characterList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getButton() != MouseEvent.BUTTON1) return;
+
+                int index = characterList.locationToIndex(e.getPoint());
+                if (index < 0 || index >= listModel.size()) return;
+
+                Rectangle cellBounds = characterList.getCellBounds(index, index);
+                if (cellBounds == null || !cellBounds.contains(e.getPoint())) return;
+
+                // Предполагаемая область кнопок — нижняя часть ячейки высотой ~30 пикселей
+                int yInCell = e.getPoint().y - cellBounds.y;
+                int cellHeight = cellBounds.height;
+                int buttonAreaHeight = 30; // примерная высота панели кнопок
+                if (yInCell <= cellHeight - buttonAreaHeight) return; // клик не в зоне кнопок
+
+                // Определяем, какая кнопка нажата, по горизонтальной координате
+                int xInCell = e.getPoint().x - cellBounds.x;
+                // Примерные координаты начала блока кнопок (справа, с отступом)
+                int buttonStartX = cellBounds.width - 280; // 4 кнопки * 70px
+                if (xInCell < buttonStartX) return;
+
+                int buttonIndex = (xInCell - buttonStartX) / 70; // ширина кнопки 70px
+                if (buttonIndex < 0 || buttonIndex >= 4) return;
+
+                Character character = listModel.getElementAt(index);
+                switch (buttonIndex) {
+                    case 0:
+                        handleAddTag(character);
+                        break;
+                    case 1:
+                        handleViewPackages(character);
+                        break;
+                    case 2:
+                        handleExport(character);
+                        break;
+                    case 3:
+                        handleDelete(character);
+                        break;
+                }
+            }
+        });
+    }
+
+    // Обработчики действий (вызываются из mouseClicked)
+
+    private void handleAddTag(Character character) {
+        Window window = SwingUtilities.getWindowAncestor(this);
+        TagEditWindow dialog = new TagEditWindow(window instanceof Frame ? (Frame) window : null, character);
+        dialog.setVisible(true);
+        refresh();
+    }
+
+    private void handleViewPackages(Character character) {
+        JOptionPane.showMessageDialog(this,
+                "Функция просмотра пакетов будет доступна в следующей версии.",
+                "Информация",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void handleExport(Character character) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        chooser.setDialogTitle(localeManager.getString("charactersheetlist.export.chooser.title"));
+
+        int result = chooser.showSaveDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File targetDir = chooser.getSelectedFile();
+            File sourceFile = new File(character.getSheetPath());
+            if (!sourceFile.exists()) {
+                JOptionPane.showMessageDialog(this,
+                        localeManager.getString("charactersheetlist.export.error.notfound"),
+                        localeManager.getString("common.error"),
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            File targetFile = new File(targetDir, sourceFile.getName());
+            try {
+                Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                JOptionPane.showMessageDialog(this,
+                        localeManager.getString("charactersheetlist.export.success") + "\n" + targetFile.getPath(),
+                        localeManager.getString("common.info"),
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException e) {
+                logger.error("Export failed", e);
+                JOptionPane.showMessageDialog(this,
+                        localeManager.getString("charactersheetlist.export.error.io") + "\n" + e.getMessage(),
+                        localeManager.getString("common.error"),
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void handleDelete(Character character) {
+        String message = localeManager.getString("charactersheetlist.delete.confirm")
+                .replace("{0}", character.getName());
+        int confirm = JOptionPane.showConfirmDialog(this,
+                message,
+                localeManager.getString("charactersheetlist.delete.title"),
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                repository.deleteCharacter(character);
+                refresh();
+            } catch (SQLException e) {
+                logger.error("Delete failed", e);
+                JOptionPane.showMessageDialog(this,
+                        localeManager.getString("charactersheetlist.error.delete") + "\n" + e.getMessage(),
+                        localeManager.getString("common.error"),
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    // Обновление данных
+
     public void refresh() {
         try {
             fullList = repository.getAllCharacters();
             currentFilter = null;
             applyFilter();
-            // Принудительное обновление отображения
             characterList.revalidate();
             characterList.repaint();
             scrollPane.revalidate();
@@ -100,7 +224,6 @@ public class CharacterSheetList extends JPanel {
         List<Character> filtered = (currentFilter == null)
                 ? fullList
                 : fullList.stream().filter(currentFilter).collect(Collectors.toList());
-
         listModel.clear();
         filtered.forEach(listModel::addElement);
     }
@@ -109,7 +232,18 @@ public class CharacterSheetList extends JPanel {
         return characterList.getSelectedValue();
     }
 
-    // ==================== Рендерер для карточек персонажей ====================
+    // Поддержка смены Look and Feel
+
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        if (characterList != null) {
+            // Пересоздаём рендерер, чтобы все компоненты обновились в соответствии с новой темой
+            characterList.setCellRenderer(new CharacterCardRenderer());
+        }
+    }
+
+    // ==================== Рендерер карточки персонажа ====================
 
     private class CharacterCardRenderer implements ListCellRenderer<Character> {
         private final JPanel panel = new JPanel(new BorderLayout(5, 5));
@@ -134,6 +268,12 @@ public class CharacterSheetList extends JPanel {
             viewPackagesButton.setName("viewPackagesButton");
             exportButton.setName("exportButton");
             deleteButton.setName("deleteButton");
+
+            // Отключаем фокус на кнопках, чтобы они не перехватывали события списка
+            addTagButton.setFocusable(false);
+            viewPackagesButton.setFocusable(false);
+            exportButton.setFocusable(false);
+            deleteButton.setFocusable(false);
 
             panel.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY),
@@ -204,8 +344,7 @@ public class CharacterSheetList extends JPanel {
             tagsPanel.revalidate();
             tagsPanel.repaint();
 
-            updateButtonListeners(list, index);
-
+            // Устанавливаем цвета выделения
             if (isSelected) {
                 panel.setBackground(list.getSelectionBackground());
                 contentPanel.setBackground(list.getSelectionBackground());
@@ -218,119 +357,9 @@ public class CharacterSheetList extends JPanel {
                 tagsPanel.setBackground(list.getBackground());
             }
 
-            // Принудительный пересчёт размера для текущего содержимого
             panel.invalidate();
             panel.validate();
-
             return panel;
-        }
-
-        private void updateButtonListeners(JList<? extends Character> list, int index) {
-            for (ActionListener al : addTagButton.getActionListeners()) {
-                addTagButton.removeActionListener(al);
-            }
-            for (ActionListener al : viewPackagesButton.getActionListeners()) {
-                viewPackagesButton.removeActionListener(al);
-            }
-            for (ActionListener al : exportButton.getActionListeners()) {
-                exportButton.removeActionListener(al);
-            }
-            for (ActionListener al : deleteButton.getActionListeners()) {
-                deleteButton.removeActionListener(al);
-            }
-
-            addTagButton.addActionListener(e -> handleAddTag(list, index));
-            viewPackagesButton.addActionListener(e -> handleViewPackages(list, index));
-            exportButton.addActionListener(e -> handleExport(list, index));
-            deleteButton.addActionListener(e -> handleDelete(list, index));
-        }
-
-        private Character getCharacterFromList(JList<? extends Character> list, int index) {
-            if (index >= 0 && index < list.getModel().getSize()) {
-                return list.getModel().getElementAt(index);
-            }
-            return null;
-        }
-
-        private void handleAddTag(JList<? extends Character> list, int index) {
-            Character character = getCharacterFromList(list, index);
-            if (character == null) return;
-
-            Window window = SwingUtilities.getWindowAncestor(CharacterSheetList.this);
-            TagEditWindow dialog = new TagEditWindow(window instanceof Frame ? (Frame) window : null, character);
-            dialog.setVisible(true);
-            refresh();
-        }
-
-        private void handleViewPackages(JList<? extends Character> list, int index) {
-            Character character = getCharacterFromList(list, index);
-            if (character == null) return;
-
-            JOptionPane.showMessageDialog(CharacterSheetList.this,
-                    "Функция просмотра пакетов будет доступна в следующей версии.",
-                    "Информация",
-                    JOptionPane.INFORMATION_MESSAGE);
-        }
-
-        private void handleExport(JList<? extends Character> list, int index) {
-            Character character = getCharacterFromList(list, index);
-            if (character == null) return;
-
-            JFileChooser chooser = new JFileChooser();
-            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            chooser.setDialogTitle(localeManager.getString("charactersheetlist.export.chooser.title"));
-
-            int result = chooser.showSaveDialog(CharacterSheetList.this);
-            if (result == JFileChooser.APPROVE_OPTION) {
-                File targetDir = chooser.getSelectedFile();
-                File sourceFile = new File(character.getSheetPath());
-                if (!sourceFile.exists()) {
-                    JOptionPane.showMessageDialog(CharacterSheetList.this,
-                            localeManager.getString("charactersheetlist.export.error.notfound"),
-                            localeManager.getString("common.error"),
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                File targetFile = new File(targetDir, sourceFile.getName());
-                try {
-                    Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    JOptionPane.showMessageDialog(CharacterSheetList.this,
-                            localeManager.getString("charactersheetlist.export.success") + "\n" + targetFile.getPath(),
-                            localeManager.getString("common.info"),
-                            JOptionPane.INFORMATION_MESSAGE);
-                } catch (IOException e) {
-                    logger.error("Export failed", e);
-                    JOptionPane.showMessageDialog(CharacterSheetList.this,
-                            localeManager.getString("charactersheetlist.export.error.io") + "\n" + e.getMessage(),
-                            localeManager.getString("common.error"),
-                            JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
-
-        private void handleDelete(JList<? extends Character> list, int index) {
-            Character character = getCharacterFromList(list, index);
-            if (character == null) return;
-
-            String message = localeManager.getString("charactersheetlist.delete.confirm")
-                    .replace("{0}", character.getName());
-            int confirm = JOptionPane.showConfirmDialog(CharacterSheetList.this,
-                    message,
-                    localeManager.getString("charactersheetlist.delete.title"),
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE);
-            if (confirm == JOptionPane.YES_OPTION) {
-                try {
-                    repository.deleteCharacter(character);
-                    refresh();
-                } catch (SQLException e) {
-                    logger.error("Delete failed", e);
-                    JOptionPane.showMessageDialog(CharacterSheetList.this,
-                            localeManager.getString("charactersheetlist.error.delete") + "\n" + e.getMessage(),
-                            localeManager.getString("common.error"),
-                            JOptionPane.ERROR_MESSAGE);
-                }
-            }
         }
     }
 }
