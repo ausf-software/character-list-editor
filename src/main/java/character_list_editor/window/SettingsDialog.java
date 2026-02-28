@@ -11,7 +11,6 @@ public class SettingsDialog extends JDialog {
     private JComboBox<String> themeCombo;
     private JComboBox<String> localeCombo;
     private JTextField defaultCharacterNameTField;
-
     private JTextField defaultCharacterDirectoryTField;
     private boolean settingsChanged = false;
 
@@ -31,25 +30,31 @@ public class SettingsDialog extends JDialog {
 
         settingsPanel.add(new JLabel(LocaleManager.inst().getString("settings.theme")));
         themeCombo = new JComboBox<>(new String[]{"light", "dark"});
+        themeCombo.setName("themeCombo");
         settingsPanel.add(themeCombo);
 
         settingsPanel.add(new JLabel(LocaleManager.inst().getString("settings.language")));
         localeCombo = new JComboBox<>(LocaleManager.inst().getAvailableLocales().toArray(new String[0]));
+        localeCombo.setName("localeCombo");
         settingsPanel.add(localeCombo);
 
         settingsPanel.add(new JLabel(LocaleManager.inst().getString("settings.character_name")));
         defaultCharacterNameTField = new JTextField();
+        defaultCharacterNameTField.setName("defaultCharacterNameField");
         settingsPanel.add(defaultCharacterNameTField);
 
         settingsPanel.add(new JLabel(LocaleManager.inst().getString("settings.directory")));
         defaultCharacterDirectoryTField = new JTextField();
+        defaultCharacterDirectoryTField.setName("defaultCharacterDirectoryField");
         settingsPanel.add(defaultCharacterDirectoryTField);
 
         add(settingsPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton okButton = new JButton(LocaleManager.inst().getString("ok"));
+        okButton.setName("okButton");
         JButton cancelButton = new JButton(LocaleManager.inst().getString("cancel"));
+        cancelButton.setName("cancelButton");
 
         buttonPanel.add(okButton);
         buttonPanel.add(cancelButton);
@@ -61,6 +66,7 @@ public class SettingsDialog extends JDialog {
         themeCombo.addActionListener(e -> settingsChanged = true);
         localeCombo.addActionListener(e -> settingsChanged = true);
         defaultCharacterNameTField.addCaretListener(e -> settingsChanged = true);
+        defaultCharacterDirectoryTField.addCaretListener(e -> settingsChanged = true);
     }
 
     private void loadCurrentSettings() {
