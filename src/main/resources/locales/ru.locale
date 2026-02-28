@@ -56,3 +56,11 @@ charactersheetlist.delete.confirm=Удалить персонажа «{0}»? Э�
 charactersheetlist.delete.title=Подтверждение удаления
 common.error=Ошибка
 common.info=Информация
+
+dice.type.label=Тип куба:
+modifier.label=Модификатор:
+roll.button=Бросить
+result.label=Результат:
+error.no.dice.type=Не выбран тип куба
+error.invalid.dice=Некорректный тип куба
+error.title=Ошибка

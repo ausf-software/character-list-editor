@@ -26,7 +26,7 @@ public class DiceRollPanelViewTest {
 
             // 1. Полная конфигурация: предустановленный куб d20, модификатор +2, подсказка
             DiceRollPanel fullPanel = new DiceRollPanel(DiceType.D20, 2, "Бросок атаки");
-            tabbedPane.addTab("С预设 d20 +2", fullPanel);
+            tabbedPane.addTab("d20 +2 (атака)", fullPanel);
 
             // 2. Свободный выбор куба, без модификатора, без подсказки
             DiceRollPanel freePanel = new DiceRollPanel(null, null, null);
@@ -34,7 +34,7 @@ public class DiceRollPanelViewTest {
 
             // 3. Предустановленный куб d6, без модификатора, с подсказкой
             DiceRollPanel hintOnlyPanel = new DiceRollPanel(DiceType.D6, null, "Урон огнём");
-            tabbedPane.addTab("d6 с подсказкой", hintOnlyPanel);
+            tabbedPane.addTab("d6 (урон)", hintOnlyPanel);
 
             // 4. Предустановленный куб d100, с модификатором -5, без подсказки
             DiceRollPanel modifierOnlyPanel = new DiceRollPanel(DiceType.D100, -5, null);

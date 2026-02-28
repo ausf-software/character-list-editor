@@ -58,3 +58,11 @@ charactersheetlist.delete.confirm=Delete character "{0}"? This action cannot be 
 charactersheetlist.delete.title=Confirm deletion
 common.error=Error
 common.info=Info
+
+dice.type.label=Dice type:
+modifier.label=Modifier:
+roll.button=Roll
+result.label=Result:
+error.no.dice.type=No dice type selected
+error.invalid.dice=Invalid dice type
+error.title=Error
