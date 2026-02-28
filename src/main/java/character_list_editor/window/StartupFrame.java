@@ -43,13 +43,15 @@ public class StartupFrame extends JFrame {
         JPanel leftPanel = new JPanel(new BorderLayout());
         leftPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 5, 5));
+        JPanel buttonPanel = new JPanel(new GridLayout(0, 1, 5, 5));
         JButton createBtn = new JButton(LocaleManager.inst().getString("create"));
         JButton importBtn = new JButton(LocaleManager.inst().getString("import"));
         JButton settingsBtn = new JButton(LocaleManager.inst().getString("settings"));
+        JButton packsBtn = new JButton(LocaleManager.inst().getString("installedPackages.title"));
 
         buttonPanel.add(createBtn);
         buttonPanel.add(importBtn);
+        buttonPanel.add(packsBtn);
         buttonPanel.add(settingsBtn);
         leftPanel.add(buttonPanel, BorderLayout.NORTH);
 
@@ -94,6 +96,7 @@ public class StartupFrame extends JFrame {
         createBtn.addActionListener(this::createNewCharacterList);
         importBtn.addActionListener(e -> importCharacter());
         settingsBtn.addActionListener(e -> openSettings());
+        packsBtn.addActionListener(e -> openPacksWindow());
 
         // Двойной клик или Enter по элементу списка
         characterList.addMouseListener(new MouseAdapter() {
@@ -119,6 +122,11 @@ public class StartupFrame extends JFrame {
             performFilter(searchField.getText());
         });
         searchTimer.setRepeats(false); // однократное срабатывание
+    }
+
+    private void openPacksWindow() {
+        InstalledPackagesWindow packagesDialog = new InstalledPackagesWindow(this);
+        packagesDialog.setVisible(true);
     }
 
     /**
