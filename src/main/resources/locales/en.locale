@@ -1,0 +1,60 @@
+# NewCharacterDialog
+newcharacter.title=Create new character sheet
+
+# Common
+cancel=Cancel
+create=Create
+browse=Browse...
+import=Import
+settings=Settings
+error=Error
+ok=OK
+
+# StartupDialog
+startup.title=Welcome
+startup.version=Version:
+startup.search=Search:
+
+# Settings
+settings.theme=Theme:
+settings.language=Language:
+settings.restart.title=Restart
+settings.restart.message=Restart required to apply changes
+settings.character_name=Default character name:
+settings.directory=Default storage path:
+
+character.import.error=Project import error
+
+# Loading dialog
+loading.character.title=Loading character sheet
+
+# Error dialog
+open.character.error.title=Error loading character sheet
+open.character.error.message=An error occurred while loading the character sheet. The file may be corrupted.
+
+# Add tag dialog
+dialog.addtag.title=Add tag
+dialog.addtag.label.name=Tag name:
+dialog.addtag.label.color=Tag color:
+dialog.addtag.button.choose=Choose
+dialog.addtag.button.add=Add
+dialog.addtag.button.cancel=Cancel
+dialog.addtag.colorchooser.title=Choose tag color
+dialog.addtag.error.database=Database error while saving tag
+dialog.addtag.error.title=Save error
+
+# Character sheet list
+charactersheetlist.button.addtag=+ Tag
+charactersheetlist.button.packages=Packages
+charactersheetlist.button.export=Export
+charactersheetlist.button.delete=Delete
+charactersheetlist.error.load=Error loading characters
+charactersheetlist.error.delete=Error deleting character
+charactersheetlist.export.chooser.title=Select export folder
+charactersheetlist.export.error.notfound=Character file not found
+charactersheetlist.export.error.io=File copy error
+charactersheetlist.export.success=Character successfully exported
+charactersheetlist.delete.confirm=Delete character "{0}"? This action cannot be undone.
+charactersheetlist.delete.title=Confirm deletion
+common.error=Error
+common.info=Info

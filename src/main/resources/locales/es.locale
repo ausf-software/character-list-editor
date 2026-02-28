@@ -1,0 +1,60 @@
+# NewCharacterDialog
+newcharacter.title=Crear nueva hoja de personaje
+
+# Common
+cancel=Cancelar
+create=Crear
+browse=Examinar...
+import=Importar
+settings=Configuración
+error=Error
+ok=Aceptar
+
+# StartupDialog
+startup.title=Bienvenido
+startup.version=Versión:
+startup.search=Buscar:
+
+# Settings
+settings.theme=Tema:
+settings.language=Idioma:
+settings.restart.title=Reiniciar
+settings.restart.message=Se requiere reiniciar para aplicar los cambios
+settings.character_name=Nombre de personaje por defecto:
+settings.directory=Ruta de almacenamiento por defecto:
+
+character.import.error=Error de importación de proyecto
+
+# Loading dialog
+loading.character.title=Cargando hoja de personaje
+
+# Error dialog
+open.character.error.title=Error al cargar la hoja de personaje
+open.character.error.message=Ocurrió un error al cargar la hoja de personaje. Posiblemente el archivo esté dañado.
+
+# Add tag dialog
+dialog.addtag.title=Añadir etiqueta
+dialog.addtag.label.name=Nombre de la etiqueta:
+dialog.addtag.label.color=Color de la etiqueta:
+dialog.addtag.button.choose=Elegir
+dialog.addtag.button.add=Añadir
+dialog.addtag.button.cancel=Cancelar
+dialog.addtag.colorchooser.title=Elige el color de la etiqueta
+dialog.addtag.error.database=Error de base de datos al guardar la etiqueta
+dialog.addtag.error.title=Error al guardar
+
+# Character sheet list
+charactersheetlist.button.addtag=+ Etiqueta
+charactersheetlist.button.packages=Paquetes
+charactersheetlist.button.export=Exportar
+charactersheetlist.button.delete=Eliminar
+charactersheetlist.error.load=Error al cargar personajes
+charactersheetlist.error.delete=Error al eliminar personaje
+charactersheetlist.export.chooser.title=Selecciona la carpeta de exportación
+charactersheetlist.export.error.notfound=Archivo de personaje no encontrado
+charactersheetlist.export.error.io=Error al copiar el archivo
+charactersheetlist.export.success=Personaje exportado exitosamente
+charactersheetlist.delete.confirm=¿Eliminar el personaje "{0}"? Esta acción no se puede deshacer.
+charactersheetlist.delete.title=Confirmar eliminación
+common.error=Error
+common.info=Información

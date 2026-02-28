@@ -1,0 +1,60 @@
+# NewCharacterDialog
+newcharacter.title=Créer une nouvelle fiche de personnage
+
+# Common
+cancel=Annuler
+create=Créer
+browse=Parcourir...
+import=Importer
+settings=Paramètres
+error=Erreur
+ok=OK
+
+# StartupDialog
+startup.title=Bienvenue
+startup.version=Version :
+startup.search=Recherche :
+
+# Settings
+settings.theme=Thème :
+settings.language=Langue :
+settings.restart.title=Redémarrage
+settings.restart.message=Redémarrage nécessaire pour appliquer les changements
+settings.character_name=Nom de personnage par défaut :
+settings.directory=Chemin de stockage par défaut :
+
+character.import.error=Erreur d'importation de projet
+
+# Loading dialog
+loading.character.title=Chargement de la fiche de personnage
+
+# Error dialog
+open.character.error.title=Erreur de chargement de la fiche
+open.character.error.message=Une erreur est survenue lors du chargement de la fiche. Le fichier est peut-être corrompu.
+
+# Add tag dialog
+dialog.addtag.title=Ajouter un tag
+dialog.addtag.label.name=Nom du tag :
+dialog.addtag.label.color=Couleur du tag :
+dialog.addtag.button.choose=Choisir
+dialog.addtag.button.add=Ajouter
+dialog.addtag.button.cancel=Annuler
+dialog.addtag.colorchooser.title=Choisir la couleur du tag
+dialog.addtag.error.database=Erreur de base de données lors de l'enregistrement du tag
+dialog.addtag.error.title=Erreur d'enregistrement
+
+# Character sheet list
+charactersheetlist.button.addtag=+ Tag
+charactersheetlist.button.packages=Paquets
+charactersheetlist.button.export=Exporter
+charactersheetlist.button.delete=Supprimer
+charactersheetlist.error.load=Erreur de chargement des personnages
+charactersheetlist.error.delete=Erreur de suppression du personnage
+charactersheetlist.export.chooser.title=Sélectionner le dossier d'exportation
+charactersheetlist.export.error.notfound=Fichier de personnage introuvable
+charactersheetlist.export.error.io=Erreur de copie du fichier
+charactersheetlist.export.success=Personnage exporté avec succès
+charactersheetlist.delete.confirm=Supprimer le personnage "{0}" ? Cette action est irréversible.
+charactersheetlist.delete.title=Confirmation de suppression
+common.error=Erreur
+common.info=Info

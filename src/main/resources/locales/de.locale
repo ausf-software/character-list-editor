@@ -1,0 +1,60 @@
+# NewCharacterDialog
+newcharacter.title=Neues Charakterblatt erstellen
+
+# Common
+cancel=Abbrechen
+create=Erstellen
+browse=Durchsuchen...
+import=Importieren
+settings=Einstellungen
+error=Fehler
+ok=OK
+
+# StartupDialog
+startup.title=Willkommen
+startup.version=Version:
+startup.search=Suche:
+
+# Settings
+settings.theme=Thema:
+settings.language=Sprache:
+settings.restart.title=Neustart
+settings.restart.message=Neustart erforderlich, um Änderungen zu übernehmen
+settings.character_name=Standardcharaktername:
+settings.directory=Standardspeicherpfad:
+
+character.import.error=Fehler beim Projektimport
+
+# Loading dialog
+loading.character.title=Lade Charakterblatt
+
+# Error dialog
+open.character.error.title=Fehler beim Laden des Charakterblatts
+open.character.error.message=Beim Laden des Charakterblatts ist ein Fehler aufgetreten. Möglicherweise ist die Datei beschädigt.
+
+# Add tag dialog
+dialog.addtag.title=Tag hinzufügen
+dialog.addtag.label.name=Tag-Name:
+dialog.addtag.label.color=Tag-Farbe:
+dialog.addtag.button.choose=Wählen
+dialog.addtag.button.add=Hinzufügen
+dialog.addtag.button.cancel=Abbrechen
+dialog.addtag.colorchooser.title=Tag-Farbe auswählen
+dialog.addtag.error.database=Datenbankfehler beim Speichern des Tags
+dialog.addtag.error.title=Speicherfehler
+
+# Character sheet list
+charactersheetlist.button.addtag=+ Tag
+charactersheetlist.button.packages=Pakete
+charactersheetlist.button.export=Exportieren
+charactersheetlist.button.delete=Löschen
+charactersheetlist.error.load=Fehler beim Laden der Charaktere
+charactersheetlist.error.delete=Fehler beim Löschen des Charakters
+charactersheetlist.export.chooser.title=Exportordner auswählen
+charactersheetlist.export.error.notfound=Charakterdatei nicht gefunden
+charactersheetlist.export.error.io=Fehler beim Kopieren der Datei
+charactersheetlist.export.success=Charakter erfolgreich exportiert
+charactersheetlist.delete.confirm=Charakter "{0}" löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+charactersheetlist.delete.title=Löschbestätigung
+common.error=Fehler
+common.info=Info
