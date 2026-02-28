@@ -56,3 +56,16 @@ charactersheetlist.delete.confirm=Удалить персонажа «{0}»? Э�
 charactersheetlist.delete.title=Подтверждение удаления
 common.error=Ошибка
 common.info=Информация
+
+installedPackages.title=Установленные пакеты
+installedPackages.button.add=Добавить пакет
+installedPackages.button.delete=Удалить
+installedPackages.error.load=Ошибка загрузки списка пакетов
+installedPackages.add.chooser.title=Выберите файл пакета (.vttp)
+installedPackages.add.stub=Функция установки пакета временно недоступна. Выбран файл:
+installedPackages.delete.confirm=Вы действительно хотите удалить выбранные пакеты ({0} шт.)?
+installedPackages.delete.title=Подтверждение удаления
+installedPackages.delete.success=Выбранные пакеты успешно удалены.
+installedPackages.delete.error=Ошибка при удалении следующих пакетов:\n
+common.error=Ошибка
+common.info=Информация
