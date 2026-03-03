@@ -19,6 +19,9 @@
         <allure.version>2.27.0</allure.version>
         <aspectj.version>1.9.22</aspectj.version>
         <junit4.version>4.13.1</junit4.version>
+        <aspectj.version>1.9.22</aspectj.version>
+        <allure.version>2.27.0</allure.version>
+        <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
     </properties>
 
     <dependencies>
@@ -31,6 +34,13 @@
         </dependency>
 
         <!-- Allure JUnit 4 integration (вместо allure-junit5) -->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-junit4</artifactId>
+            <version>${allure.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-junit4</artifactId>
@@ -144,24 +154,54 @@
                 </dependencies>
             </plugin>
 
+            <!-- Плагин для копирования файлов конфигурации Allure (опционально) -->
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-allure-config</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${allure.results.directory}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/test/resources</directory>
+                                    <includes>
+                                        <include>allure.properties</include>
+                                        <include>categories.json</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Maven Surefire Plugin with Allure/AspectJ support (для JUnit 4) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.0</version> <!-- Ваша версия, можно оставить -->
+                <version>3.5.0</version> <!-- или версия из примера 2.21.0, но 3.5.0 тоже подойдёт -->
                 <configuration>
-                    <testFailureIgnore>false</testFailureIgnore> <!-- Статья рекомендует false -->
+                    <testFailureIgnore>false</testFailureIgnore>
+                    <!-- ArgLine только для AspectJ, если вы используете @Step -->
                     <argLine>-javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"</argLine>
+                    <!-- Явное указание слушателя Allure для JUnit4 -->
                     <properties>
                         <property>
                             <name>listener</name>
                             <value>io.qameta.allure.junit4.AllureJunit4</value>
                         </property>
                     </properties>
+                    <!-- Правильный способ задать директорию для результатов Allure -->
                     <systemProperties>
                         <property>
                             <name>allure.results.directory</name>
-                            <value>${project.build.directory}/allure-results</value>
+                            <value>${allure.results.directory}</value>
                         </property>
                     </systemProperties>
                 </configuration>
@@ -174,14 +214,14 @@
                 </dependencies>
             </plugin>
 
-            <!-- Allure Maven Plugin for report generation -->
+            <!-- Плагин Allure Maven для генерации отчёта -->
             <plugin>
                 <groupId>io.qameta.allure</groupId>
                 <artifactId>allure-maven</artifactId>
-                <version>2.12.0</version>
+                <version>2.12.0</version> <!-- или 2.9, как в примере -->
                 <configuration>
                     <reportVersion>${allure.version}</reportVersion>
-                    <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
+                    <resultsDirectory>${allure.results.directory}</resultsDirectory>
                 </configuration>
             </plugin>
 
