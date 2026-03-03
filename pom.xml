@@ -223,6 +223,15 @@
                     <reportVersion>${allure.version}</reportVersion>
                     <resultsDirectory>${allure.results.directory}</resultsDirectory>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>allure-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- JAR plugin: define main class -->
