@@ -1,0 +1,66 @@
+# NewСharacterDialog
+newcharacter.title=Создать новый лист персонажа
+
+# Common
+cancel=Отмена
+create=Создать
+browse=Обзор...
+import=Импорт
+settings=Настройки
+error=Ошибка
+ok=ОК
+
+# StartupDialog
+startup.title=Добро пожаловать
+startup.version=Версия:
+startup.search=Поиск:
+
+# Settings
+settings.theme=Тема:
+settings.language=Язык:
+settings.restart.title=Перезапуск
+settings.restart.message=Для применения изменений требуется перезапуск приложения
+settings.character_name=Стандартное имя персонажа:
+settings.directory=Путь хранения по умолчанию:
+
+character.import.error="Ошибка импорта проекта"
+
+# Диалог загрузки проекта
+loading.character.title=Загрузка листа персонажа
+
+# Диалог ошибки открытия листа персонажа
+open.character.error.title=Ошибка загрузки листа персонажа
+open.character.error.message=В результате загрузки листа персонажа произошла ошибка. Возможно поврежден файл.
+
+dialog.addtag.title=Добавить тег
+dialog.addtag.label.name=Название тега:
+dialog.addtag.label.color=Цвет тега:
+dialog.addtag.button.choose=Выбрать
+dialog.addtag.button.add=Добавить
+dialog.addtag.button.cancel=Отмена
+dialog.addtag.colorchooser.title=Выберите цвет тега
+dialog.addtag.error.database=Ошибка базы данных при сохранении тега
+dialog.addtag.error.title=Ошибка сохранения
+
+charactersheetlist.button.addtag=+ Тег
+charactersheetlist.button.packages=Пакеты
+charactersheetlist.button.export=Экспорт
+charactersheetlist.button.delete=Удалить
+charactersheetlist.error.load=Ошибка загрузки персонажей
+charactersheetlist.error.delete=Ошибка удаления персонажа
+charactersheetlist.export.chooser.title=Выберите папку для экспорта
+charactersheetlist.export.error.notfound=Файл персонажа не найден
+charactersheetlist.export.error.io=Ошибка копирования файла
+charactersheetlist.export.success=Персонаж успешно экспортирован
+charactersheetlist.delete.confirm=Удалить персонажа «{0}»? Это действие нельзя отменить.
+charactersheetlist.delete.title=Подтверждение удаления
+common.error=Ошибка
+common.info=Информация
+
+dice.type.label=Тип куба:
+modifier.label=Модификатор:
+roll.button=Бросить
+result.label=Результат:
+error.no.dice.type=Не выбран тип куба
+error.invalid.dice=Некорректный тип куба
+error.title=Ошибка
